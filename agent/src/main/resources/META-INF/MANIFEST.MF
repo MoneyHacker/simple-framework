@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Main-Class: SimpleAgent
+Premain-Class: com.simple.agent.SimpleAgent
+Can-Redefine-Classes: true
+Can-Retransform-Classes: true
+Boot-Class-Path: javassist-3.20.0-GA.jar

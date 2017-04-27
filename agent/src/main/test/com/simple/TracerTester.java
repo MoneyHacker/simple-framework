@@ -14,7 +14,7 @@ public class TracerTester {
         TracerTester tt = new TracerTester();
         tt.testOne(12);
     }
-    @TraceMethod(traceType = TraceTypeEnum.Service,traceParameter = true)
+    @TraceMethod(traceType = TraceTypeEnum.Service,include = "i")
     public  void testOne(Integer i) {
         System.out.println(i);
         testTwo(i+"name");

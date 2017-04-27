@@ -1,5 +1,7 @@
 package com.simple.monitor.spi;
 
+import java.lang.reflect.Method;
+
 /**
  * Created by simple on 2017/4/24 9:30
  *
@@ -14,17 +16,17 @@ public interface ITraceFilter {
      */
     Boolean isTraceClass(final String className);
 
-    /**
-     * 是否是需要监控的方法
-     * @param className
-     * @param methodName
-     * @return
-     */
-    Boolean isTraceMethod(final String className,final String methodName);
 
     /**
      * 监控点代码织入,class文件保存的路径
      * @return
      */
     String getTraceDebugDumpDirectory();
+
+    /**
+     * 是否是需要监控的方法
+     * @param method
+     * @return
+     */
+    Boolean isTraceMethod(final Method method);
 }

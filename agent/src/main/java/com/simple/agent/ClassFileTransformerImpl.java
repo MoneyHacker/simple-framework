@@ -46,6 +46,7 @@ public class ClassFileTransformerImpl implements ClassFileTransformer {
 
     /**
      * 返回监控点代码头需要织入的代码片段
+     * 获取不到方法参数名称
      * @return
      */
     private String getExcludeBeforeCode(final CtMethod ctMethod, final String exclude) {
@@ -102,15 +103,15 @@ public class ClassFileTransformerImpl implements ClassFileTransformer {
         String[] includeParameterNames = include.split(",");
         StringBuilder sbCode = new StringBuilder("java.util.Map methodParameterMap = new java.util.WeakHashMap(")
                 .append(includeParameterNames.length).append(");");
-        int parameterIndex = 1;
+        int parameterIndex = 0;
         for (String pm:includeParameterNames) {
             sbCode.append("methodParameterMap.put(\"").append(pm).append("\",")
-                    .append("com.simple.monitor.support.CodeFactory.getParameterValue($").append(parameterIndex++)
-                    .append(",\"").append(parameterTypes[parameterIndex++].getName()).append("\"));");
+                    .append("com.simple.monitor.support.CodeFactory.getParameterValue($").append(parameterIndex+1)
+                    .append(",\"").append(parameterTypes[parameterIndex].getName()).append("\"));");
+            parameterIndex++;
         }
         return sbCode.toString();
     }
-
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException{
         String dotName = className.replaceAll("/", ".");
@@ -142,22 +143,26 @@ public class ClassFileTransformerImpl implements ClassFileTransformer {
                         //监控点是否跟踪参数
                         boolean traceParameter = annotation.getMemberValue("traceParameter") == null ?
                                 false : Boolean.valueOf(annotation.getMemberValue("traceParameter").toString());
-                        //是否捕获异常
                         String insertBefore = "{";
                         String include = annotation.getMemberValue("include") == null ? null : annotation.getMemberValue("include").toString();
                         String parameterTraceCode = "";
+                        /*
+                         *如果指定了include参数名称,则不考虑traceParameter和exclude
+                         */
                         if (null != include) {
+                            traceParameter = true;
+                            include = include.substring(1, include.length() - 1);
                             parameterTraceCode = getIncludeBeforeCode(cm, include);
                         } else if (traceParameter) {
                             //需要排除参数名称
                             String exclude = annotation.getMemberValue("exclude") == null ? null : annotation.getMemberValue("exclude").toString();
                             if (null != exclude) {
                                 //删除前后的引号
-                                include = exclude.substring(1, exclude.length() - 1);
+                                exclude = exclude.substring(1, exclude.length() - 1);
                             }
                             parameterTraceCode = getExcludeBeforeCode(cm, exclude);
-                            insertBefore += parameterTraceCode;
                         }
+                        insertBefore += parameterTraceCode;
                         //下面这句话,在Web容器中无法修改注解所在的类的字节码(ClassLoader的问题,暂时未找到解决方案)
                         // TraceMethod traceMethod = (TraceMethod) annotation.toAnnotationType(loader, cp);
                         String methodName = cm.getName();
@@ -179,7 +184,7 @@ public class ClassFileTransformerImpl implements ClassFileTransformer {
                 cc.detach();
                 return cc.toBytecode();
             }
-           return null;
+            return null;
         } catch (CannotCompileException e) {
             e.printStackTrace();
         } catch (NotFoundException e) {
@@ -194,5 +199,6 @@ public class ClassFileTransformerImpl implements ClassFileTransformer {
 //        System.out.println("protectionDomain=" + protectionDomain.getClass().getName());
 //        System.out.println("classBeingRedefined=" + classBeingRedefined);
         return null;
-        }
+    }
+
     }
